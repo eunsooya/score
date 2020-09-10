@@ -1,0 +1,72 @@
+@charset "UTF-8";
+.header{
+    margin: 0 auto;
+    width: 1800px;
+    position:fixed;
+    top: 0px;
+    left: 52px;
+    left: 52px;
+    background-color: violet;
+}
+.title{
+    height: 100px;
+    text-align: center;
+}
+.logo{
+    float: left;
+    width: 300px;
+    height: 100px;
+    background-color:blueviolet;
+    margin-right: 100px;
+}
+.search{
+    width: 1000px;
+    background-color: brown;
+    /* margin: 0 auto; */
+
+}
+.mylist{
+    float: right;
+    width: 300px;
+    height: 100px;
+    background-color: chocolate;
+    margin-left: 100px;
+}
+.menu{
+    height: 40px;
+}
+.menu_left{
+    float: left;
+    margin-right: 190px;
+    /* width: 400px; */
+}
+.menu_right{
+    float: right;
+    /* width: 1200px; */
+}
+.menu_li{
+    background-color: coral;
+    float: left;
+    height: 40px;
+    width: 150px;
+}
+.bottom{
+    width: 1500px;
+    height: 1500px;
+    background-color: darkgoldenrod;
+    margin: 0 auto;
+    margin-top: 130px;
+}
+.bot{
+    width: 1000px;
+    height: 100px;
+    margin: 0 auto;
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+.bot_main{
+    width: 1000px;
+    height: 1300px;
+    margin: 0 auto;
+    background-color: darkolivegreen;
+}

@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="com.human.shop.dao.IDao">
+<!-- 메인페이지 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    -->
+   <select id='newScore' resultType="com.human.shop.dto.Score">
+      SELECT ROWNUM RNUM,S_ID,SCORE_DATE,SCORE_NAME,SCORE_SINGER
+      FROM(SELECT S_ID,SCORE_DATE,SCORE_NAME,SCORE_SINGER
+          FROM SCORE ORDER BY SCORE_DATE DESC)
+      WHERE ROWNUM BETWEEN 1 AND 5 ORDER BY RNUM
+   </select>
+   <select id="bestScore" resultType="com.human.shop.dto.Sales">
+      SELECT RNUM,S_ID,SALES_NAME,SINGER,CNT
+         FROM (SELECT ROWNUM RNUM,S_ID,SALES_NAME,CNT,SINGER 
+                 FROM (SELECT S_ID,SALES_NAME,COUNT(*) CNT,SINGER 
+                         FROM (SELECT A.SCORE_SINGER SINGER,B.*
+                                 FROM SCORE A, SALES B
+                                 WHERE A.S_ID=B.S_ID) 
+                             GROUP BY S_ID,SALES_NAME,SINGER ORDER BY CNT DESC))
+         WHERE RNUM BETWEEN 1 AND 5 ORDER BY RNUM
+   </select>
+   <select id="gayoBestScore" resultType="com.human.shop.dto.Sales">
+      SELECT RNUM,S_ID,SALES_NAME,SINGER,SALES_GENRE,CNT 
+      FROM (SELECT ROWNUM RNUM,S_ID,SALES_NAME,CNT,SINGER,SALES_GENRE 
+              FROM (SELECT S_ID,SALES_NAME,COUNT(*) CNT,SINGER,SALES_GENRE 
+                      FROM (SELECT A.SCORE_SINGER SINGER,B.*
+                              FROM SCORE A, SALES B
+                              WHERE A.S_ID=B.S_ID) 
+                          WHERE SALES_GENRE='가요'
+                          GROUP BY S_ID,SALES_NAME,SINGER,SALES_GENRE ORDER BY CNT DESC))
+      WHERE RNUM BETWEEN 1 AND 5 ORDER BY RNUM
+   </select>
+<!-- 회원가입 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	 -->
+	<insert id="member_insert">
+		INSERT INTO MEMBER VALUES(#{param1},#{param2},SYSDATE,#{param3},#{param4},#{param5},#{param6},#{param7},#{param8})
+ 	</insert>
+ 	
+	<select id='join_idchk' resultType="com.human.shop.dto.Member">
+      select m_id from member where m_id=#{param1} 
+   </select>
+   
+   <select id='join_emailchk' resultType="com.human.shop.dto.Member">
+      select member_mail from member where member_mail = #{param1}
+   </select>
+ 	
+<!-- 아이디/비밀번호찾기 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<select id="idFind" resultType="com.human.shop.dto.Member">
+   		SELECT M_ID FROM MEMBER WHERE MEMBER_NAME=#{param1} AND MEMBER_MAIL=#{param2}
+    </select>
+    
+    <select id="member_pwSelect" resultType="com.human.shop.dto.Member">
+      SELECT * FROM MEMBER WHERE MEMBER_MAIL = #{param1} AND M_ID = #{param2} AND MEMBER_NAME = #{param3}
+   </select>
+   
+<!-- 사이드 최신목록 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   <select id="sideImg" resultType="com.human.shop.dto.Newlist">
+		<![CDATA[select rownum,maxdate,s_id
+			from
+			(SELECT max(newlist_date) as maxdate,s_id FROM
+			(SELECT * FROM newlist where m_id=#{param1} ORDER BY newlist_date DESC) 
+			GROUP BY s_id
+			order by max(newlist_date) desc)
+			where rownum <=7]]>
+   </select>
+   
+   
+<!--    회원가입시 newlist 추가 -->
+   <insert id="side_join_insert">
+   		insert into newlist values(newlist_seq.nextval,SYSDATE,#{param1},#{param2})
+   </insert>
+   
+   <insert id="newlist_insert">
+   		insert into newlist values(newlist_seq.nextval,SYSDATE,#{param1},#{param2})
+   </insert>
+   
+   <select id="newlist_compare" resultType="com.human.shop.dto.Newlist">
+      SELECT * FROM newlist where m_id = #{param1} and s_id =#{param2}
+   </select>
+   
+   <select id="newlist_rowid" resultType="String">
+   			SELECT ROWID FROM newlist where m_id = #{param1} order by newlist_date
+   </select>
+<!--    널값이면 삭제 -->
+   <delete id='newlist_delete'>
+   		delete from (select * from newlist where m_id= #{param1} order by newlist_date)
+   		 where rowid =#{param2} 
+   </delete>
+<!--    중복된거있으면 삭제 -->
+   <delete id='newlist_delete2'>
+   		delete from newlist where m_id = #{param1} and s_id =#{param2}
+   </delete>
+   <!-- 최신악보~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    -->
+
+   <select id='newnew' resultType="com.human.shop.dto.Score">
+      SELECT ROWNUM RNUM,S_ID,SCORE_DATE,SCORE_NAME,SCORE_SINGER
+      FROM(SELECT S_ID,SCORE_DATE,SCORE_NAME,SCORE_SINGER
+          FROM SCORE ORDER BY SCORE_DATE DESC)
+      WHERE ROWNUM BETWEEN 1 AND 15 ORDER BY RNUM
+   </select>
+
+
+<!-- 인기악보 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    -->
+
+   <select id="bestbest" resultType="com.human.shop.dto.Sales">
+      SELECT RNUM,S_ID,SALES_NAME,SINGER,CNT
+         FROM (SELECT ROWNUM RNUM,S_ID,SALES_NAME,CNT,SINGER 
+                 FROM (SELECT S_ID,SALES_NAME,COUNT(*) CNT,SINGER 
+                         FROM (SELECT A.SCORE_SINGER SINGER,B.*
+                                 FROM SCORE A, SALES B
+                                 WHERE A.S_ID=B.S_ID) 
+                             GROUP BY S_ID,SALES_NAME,SINGER ORDER BY CNT DESC))
+         WHERE RNUM BETWEEN 1 AND 15 ORDER BY RNUM
+   </select>
+   
+   
+   
+  <!-- 검색~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <select id='search_select' resultType="com.human.shop.dto.Score">
+     	<![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM SCORE WHERE SCORE_NAME=#{param3} OR SCORE_SINGER=#{param4} ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+   </select>
+       <select id='search_total' resultType='integer'>
+      SELECT COUNT(*) FROM SCORE WHERE SCORE_NAME=#{param1} OR SCORE_SINGER=#{param2}
+   </select>
+    
+<!-- 상품페이지 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	
+	<select id='product_select' resultType="com.human.shop.dto.Score">
+      select * from score where s_id = #{param1}
+   </select>
+<!-- 상품 찜하기 -->
+   <select id='product_heart' resultType="com.human.shop.dto.Heart">
+   		select * from heart where m_id=#{param1} and s_id=#{param2}
+   </select>
+   <insert id='heart_insert'>
+   		insert into heart values(#{param1},#{param2},#{param3})
+   </insert>
+   <select id='product_vedio' resultType="com.human.shop.dto.Score">
+    select a.*
+	from (select * from score  order by dbms_random.value) a,(select * from score where s_id=#{param1}) b
+	where a.score_parts=b.score_parts
+	and rownum =1
+   </select>
+   
+    <!-- 마이페이지 찜한목록 -->
+   <select id="mypage_heart" resultType="com.human.shop.dto.Heart">
+         select * from heart where m_id=#{param1}
+   </select>
+      <delete id='heart_delete'>
+      delete from heart where s_id = #{param1}
+   </delete>
+   <delete id='heart_alldelete'>
+      delete from heart where m_id =#{param1}
+   </delete>
+ <!-- 마이페이지 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	
+<!--마이페이지  -->
+   <select id="mypage_select" resultType="com.human.shop.dto.Sales">
+         <![CDATA[select to_char(sales_date,'yyyy-mm-dd') sales_date,sales_name,sales_parts,sales_genre,sales_price from sales where m_id = #{param1} and to_char(sales_date,'YYYYMMDD') >= #{param2} and to_char(sales_date,'YYYYMMDD') <= #{param3} order by sales_date]]>
+   </select>
+
+   
+<!-- 마이페이지 내정보수정 -->
+   <select id="mypage_info" resultType="com.human.shop.dto.Member">
+         select * from member where m_id = #{param1}
+   </select>
+   <update id="mypage_update">
+         update member set member_pw = #{param2}, member_mobile = #{param3} ,member_adress = #{param4} where m_id = #{param1}
+   </update>
+   <select id="mypage_pwconfirm" resultType="com.human.shop.dto.Member">
+         select * from member where member_pw = #{param1} and m_id = #{param2}
+   </select>
+   
+  <!-- 마이페이지 마일리지 -->
+   <!-- mileage 에 insert -->
+   <insert id="mileage_insert">
+         insert into mileage values(#{param1},#{param2})
+   </insert>
+   
+    <!-- sales mileage에 insert -->
+   <insert id="sales_mileage_insert">
+         insert into sales_mileage values(#{param1},SYSDATE,#{param2})
+   </insert>
+     <!-- 마이페이지 마일리지보여주기 -->
+   <select id="mypage_mileage_select_all" resultType='com.human.shop.dto.Sales_mileage'>
+         select * from sales_mileage where m_id=#{param1}
+   </select>
+   
+   <select id="mypage_mileage_select_base" resultType='integer'>
+         select sum(sale_mile) from sales_mileage where m_id=#{param1}
+   </select>
+   
+   <select id="mypage_mileage_it" resultType='com.human.shop.dto.Mileage'>
+         select mileage from mileage where m_id=#{param1}
+   </select>
+   
+  <!-- 마일리지 -->
+     <select id="mileage_basemile" resultType='com.human.shop.dto.Mileage'>
+        select * from mileage where m_id = #{param1}
+     </select>
+     <insert id="mileage_sales_insert">
+        insert into sales_mileage values(#{param1},SYSDATE,#{param2})
+     </insert>
+     <update id="mileage_update">
+        update mileage set mileage = #{param1} where m_id = #{param2}
+     </update>
+   
+<!--  fqa부분~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<select id="list" resultType="com.human.shop.dto.fqaDto">
+		SELECT rownum,m_Id,fqa_id,to_char(fqa_date,'YY/MM/DD') fqa_date,fqa_name,fqa_title,fqa_kategory,fqa_content,fqa_group FROM FQA ORDER BY ROWNUM
+	</select>
+
+	<select id="login" resultType="com.human.shop.dto.loginDto">
+		SELECT m_id,member_pw,member_name FROM MEMBER WHERE m_id = #{param1} and member_pw = #{param2}
+	</select>
+	
+	<insert id="fqa_insert">
+		INSERT INTO FQA VALUES(#{param1},fqa_seq.NEXTVAL,SYSDATE,#{param2},#{param3},#{param4},#{param5},null)
+	</insert>
+	
+	<select id="fqa_name_write" resultType="com.human.shop.dto.loginDto">
+		SELECT member_name FROM MEMBER WHERE m_id = #{param1}
+	</select>
+	
+	<select id="fqacontent" resultType="com.human.shop.dto.fqaDto">
+		SELECT rownum,m_Id,fqa_id,to_char(fqa_date,'YY/MM/DD') fqa_date,fqa_name,fqa_title,fqa_kategory,fqa_content,fqa_group FROM FQA WHERE fqa_id = #{param1}
+	</select>
+	
+	<delete id='fqa_delete'>
+		DELETE FROM FQA WHERE fqa_id = #{param1}
+	</delete>
+	
+	<update id='fqa_update'>
+		UPDATE FQA SET fqa_title = #{param1},fqa_content = #{param2} WHERE fqa_id = #{param3}
+	</update>
+	
+	<update id='fqa_group_update'>
+		UPDATE FQA SET fqa_group = #{param1} WHERE fqa_id = #{param2}
+	</update>
+	
+	<select id='fqa_page' resultType='com.human.shop.dto.fqaDto'>
+		<![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM FQA ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+	</select>
+	
+	<select id='fqa_total' resultType='integer'>
+		SELECT COUNT(*) FROM FQA
+	</select>
+<!--  Cart부분~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<select id='cart' resultType='com.human.shop.dto.Cart'>
+		select * from Cart where m_id = #{param1}
+	</select>
+	<select id='cart_online' resultType='com.human.shop.dto.Cart'>
+		select * from Cart where m_id =#{param1}
+	</select>
+	<delete id='cart_delete'>
+		delete from Cart where cart_id = #{param1}
+	</delete>
+	<insert id='sales_insert'>
+		insert into sales values(#{param1},#{param2},sysdate,#{param3},#{param4},#{param5},#{param6},#{param7})
+	</insert>
+	<delete id='cart_alldelete'>
+		delete from Cart where m_id =#{param1}
+	</delete>
+	<select id='carts' resultType='com.human.shop.dto.Cart'>
+		select * from Cart where cart_id =#{param1}
+	</select>
+	
+<!--  주문정보(pay) 부분 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+	<select id='order_Info' resultType='com.human.shop.dto.Member'>
+		select * from member where m_id = #{param1}
+	</select>
+	
+	<select id='cart3' resultType='com.human.shop.dto.Cart'>
+		select * from Cart where cart_id =#{param1}
+	</select>
+
+
+
+<!--  상품 부분 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+  <select id="score" resultType="com.human.shop.dto.Score">
+      <![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM SCORE ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+   </select>
+   <select id='score_total' resultType='integer'>
+      SELECT COUNT(*) FROM SCORE
+   </select>
+   <!-- productssel -->
+   <select id="parts" resultType="com.human.shop.dto.Score">
+      <![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM SCORE WHERE SCORE_PARTS=#{param3} ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+   </select>
+   <select id='parts_total' resultType='integer'>
+      SELECT COUNT(*) FROM SCORE WHERE SCORE_PARTS=#{param1}
+   </select>
+   <!-- 단독상품 주문 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    -->
+   <select id="pay_product" resultType="com.human.shop.dto.Score">
+      select * from score where s_id=#{param1}
+   </select>
+   <!-- gerne -->
+   <select id="genre" resultType="com.human.shop.dto.Score">
+      <![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM SCORE WHERE SCORE_GENRE=#{param3} ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+   </select>
+   <select id='genre_total' resultType='integer'>
+      SELECT COUNT(*) FROM SCORE WHERE SCORE_GENRE=#{param1}
+   </select> 
+   <select id='product_confirm' resultType="com.human.shop.dto.Score">
+   		select * from Score where s_id= #{param1}
+   </select>
+   
+   <!-- 개인상품 페이지~~~~~ -->
+   <insert id='product_cart'>
+   		insert into cart values(#{param1},#{param2},cart_seq.nextval,#{param3},#{param4},#{param5},#{param6},#{param7},#{param8})
+   </insert>
+
+ 
+
+   <!-- 공지사항~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+   <select id='notice_page' resultType='com.human.shop.dto.notice'>
+      <![CDATA[SELECT ROWNUM,A.* FROM (SELECT ROWNUM AS RNUM, A.* FROM (SELECT * FROM NOTICE ORDER BY ROWNUM) A WHERE ROWNUM <= #{param1}) A WHERE RNUM >= #{param2}]]>
+   </select>
+   
+   <select id='notice_total' resultType='integer'>
+      SELECT COUNT(*) FROM NOTICE
+   </select>
+   <select id="noticecontent" resultType="com.human.shop.dto.notice">
+      SELECT rownum,m_Id,notice_id,to_char(notice_date,'YY/MM/DD') notice_date,notice_name,notice_title,notice_content FROM NOTICE WHERE notice_id = #{param1}
+   </select>
+   
+   <delete id='notice_delete'>
+      DELETE FROM NOTICE WHERE notice_id = #{param1}
+   </delete>
+   
+   <update id='notice_update'>
+      UPDATE NOTICE SET notice_title = #{param1},notice_content = #{param2} WHERE notice_id = #{param3}
+   </update>
+   
+   <insert id="notice_insert">
+      INSERT INTO NOTICE VALUES(#{param1},notice_seq.NEXTVAL,SYSDATE,#{param2},#{param3},#{param4})
+   </insert>
+   
+   
+</mapper>
